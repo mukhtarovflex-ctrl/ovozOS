@@ -16,7 +16,7 @@ jobs:
 
       - name: Extract ovozos.zip
         run: |
-          unzip -o ovozos.zip -d extracted_project
+          unzip -o ovozos.zip.zip -d extracted_project
           if [ -f "extracted_project/build.gradle.kts" ]; then
             cp -a extracted_project/. .
           else
