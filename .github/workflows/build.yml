@@ -38,18 +38,36 @@ jobs:
           KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
         run: |
           test -n "$KEYSTORE_BASE64"
-          printf '%s' "$KEYSTORE_BASE64" | base64 --decode > debug.keystore
+          printf '%s' "$KEYSTORE_BASE64" | tr -d '\r\n' | base64 --decode > debug.keystore
           test -s debug.keystore
+
+      - name: Verify Keystore and Password
+        env:
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+        run: |
+          test -n "$KEYSTORE_PASSWORD"
+          keytool -list \
+            -keystore debug.keystore \
+            -storepass:env KEYSTORE_PASSWORD \
+            -alias androiddebugkey
+          echo "Keystore and password verified"
 
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '9.3.1'
+          cache-disabled: true
 
       - name: Build APK with Play Integrity
         env:
           KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
-        run: gradle assembleDebug -PproductionAppCheck=true --stacktrace
+        run: |
+          gradle clean assembleDebug \
+            -PproductionAppCheck=true \
+            --no-configuration-cache \
+            --no-build-cache \
+            --no-daemon \
+            --stacktrace
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
